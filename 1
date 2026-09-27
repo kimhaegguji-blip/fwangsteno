@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>속기 약어 연습 프로그램</title>
+  <style>
+    :root {
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --success: #10b981;
+      --error: #ef4444;
+      --text: #1f2937;
+      --text-light: #6b7280;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      padding: 32px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+
+    .stats-board {
+      display: flex;
+      justify-content: space-between;
+      background-color: #f8fafc;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .stats-board span strong {
+      color: var(--primary);
+    }
+
+    .word-card {
+      margin: 20px 0;
+      padding: 30px;
+      background-color: #eef2ff;
+      border-radius: 12px;
+      border: 2px solid #e0e7ff;
+    }
+
+    .word-title {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .word-display {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: center;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    button {
+      padding: 14px 24px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .feedback {
+      min-height: 24px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .feedback.correct {
+      color: var(--success);
+    }
+
+    .feedback.incorrect {
+      color: var(--error);
+    }
+
+    .reset-btn {
+      margin-top: 16px;
+      background-color: transparent;
+      color: var(--text-light);
+      font-size: 0.85rem;
+      border: 1px solid #d1d5db;
+    }
+
+    .reset-btn:hover {
+      background-color: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>⚡ 속기 약어 타자 연습기</h1>
+
+  <div class="stats-board">
+    <span>진행: <strong id="progress">0/0</strong></span>
+    <span>정답률: <strong id="accuracy">0%</strong></span>
+    <span>맞춤/틀림: <strong id="score">0 / 0</strong></span>
+  </div>
+
+  <div class="word-card">
+    <div class="word-title">다음 단어의 약법을 입력하세요</div>
+    <div class="word-display" id="target-word">제시어</div>
+  </div>
+
+  <form id="quiz-form" onsubmit="checkAnswer(event)">
+    <div class="input-group">
+      <input type="text" id="user-input" placeholder="약어 입력 (예: ㄱㅁ)" autocomplete="off" autofocus>
+      <button type="submit">확인</button>
+    </div>
+  </form>
+
+  <div class="feedback" id="feedback"></div>
+
+  <button class="reset-btn" onclick="initQuiz()">처음부터 다시 시작</button>
+</div>
+
+<script>
+  // ==========================================
+  // [데이터 설정 Zone] 
+  // 약 5,500개의 데이터를 아래 배열 형식으로 추가하면 됩니다.
+  // ==========================================
+  const shorthandData = [
+    { word: "대한민국", code: "ㄷㅎ-ㄱㅁ" },
+    { word: "국민", code: "ㄱㅁ" },
+    { word: "위하여", code: "ㅜㅣㄲㅎ" },
+    { word: "때문에", code: "ㄷㅁㅓㅣ" },
+    { word: "청와대", code: "ㅊㅇㄷ" },
+    { word: "국회의원", code: "ㄱㅎㅇㅇ" },
+    { word: "대통령", code: "ㄷㅌㄹ" },
+    { word: "선생님", code: "ㅅㅅㄴ" },
+    { word: "기술개발", code: "ㄱㅅㄱㅂ" },
+    { word: "불구하고", code: "ㅂㄱ-ㄲㅎ" },
+    { word: "결과적으로", code: "ㄱㄱㅈㅇㄹ" },
+    { word: "무엇보다", code: "ㅁㅓㅅㅂㄷ" }
+  ];
+
+  let currentList = [];
+  let currentIndex = 0;
+  let correctCount = 0;
+  let incorrectCount = 0;
+
+  // 배열 섞기 함수 (Fisher-Yates Shuffle)
+  function shuffle(array) {
+    let list = [...array];
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  }
+
+  // Quiz 초기화
+  function initQuiz() {
+    currentList = shuffle(shorthandData);
+    currentIndex = 0;
+    correctCount = 0;
+    incorrectCount = 0;
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("feedback").className = "feedback";
+    updateStats();
+    showWord();
+  }
+
+  // 화면에 단어 표시
+  function showWord() {
+    if (currentIndex >= currentList.length) {
+      document.getElementById("target-word").textContent = "🎉 완료!";
+      document.getElementById("user-input").disabled = true;
+      document.getElementById("feedback").textContent = "모든 단어를 연습했습니다!";
+      document.getElementById("feedback").className = "feedback correct";
+      return;
+    }
+
+    const currentItem = currentList[currentIndex];
+    document.getElementById("target-word").textContent = currentItem.word;
+    document.getElementById("user-input").value = "";
+    document.getElementById("user-input").disabled = false;
+    document.getElementById("user-input").focus();
+  }
+
+  // 정답 확인
+  function checkAnswer(event) {
+    event.preventDefault();
+    const inputField = document.getElementById("user-input");
+    const userVal = inputField.value.trim();
+    const currentItem = currentList[currentIndex];
+    const feedbackEl = document.getElementById("feedback");
+
+    if (!userVal) return;
+
+    if (userVal === currentItem.code) {
+      correctCount++;
+      feedbackEl.textContent = `정답입니다! (${currentItem.word} = ${currentItem.code})`;
+      feedbackEl.className = "feedback correct";
+    } else {
+      incorrectCount++;
+      feedbackEl.textContent = `오답입니다! 정답: [ ${currentItem.code} ]`;
+      feedbackEl.className = "feedback incorrect";
+    }
+
+    currentIndex++;
+    updateStats();
+    showWord();
+  }
+
+  // 통계 업데이트
+  function updateStats() {
+    const total = currentList.length;
+    const answered = correctCount + incorrectCount;
+    const accuracy = answered === 0 ? 0 : Math.round((correctCount / answered) * 100);
+
+    document.getElementById("progress").textContent = `${answered}/${total}`;
+    document.getElementById("accuracy").textContent = `${accuracy}%`;
+    document.getElementById("score").textContent = `${correctCount} / ${incorrectCount}`;
+  }
+
+  // 앱 시작
+  window.onload = initQuiz;
+</script>
+
+</body>
+</html>
